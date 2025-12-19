@@ -30,6 +30,7 @@
 #include "protocol.h"
 #include "proxy.h"
 #include "http_proxy.h"
+#include "hos.h"
 #include "strcase.h"
 #include "url.h"
 #include "vauth/vauth.h"
@@ -527,6 +528,13 @@ CURLcode Curl_proxy_init_conn(struct Curl_easy *data,
   DEBUGASSERT(!conn->http_proxy.peer);
 
   if(proxy_do_not_proxy(data))
+    goto out;
+
+  /*************************************************************
+   * Try to get system proxy settings (e.g. on Nintendo Switch)
+   *************************************************************/
+  result = Curl_hos_get_system_proxy(data);
+  if(result)
     goto out;
 
   /*************************************************************

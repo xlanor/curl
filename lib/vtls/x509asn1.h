@@ -30,7 +30,7 @@
 struct Curl_asn1Element;
 
 #if defined(USE_GNUTLS) || defined(USE_WOLFSSL) || defined(USE_SCHANNEL) || \
-  defined(USE_MBEDTLS) || defined(USE_RUSTLS)
+  defined(USE_MBEDTLS) || defined(USE_RUSTLS) || defined(USE_LIBNX)
 
 #include "cfilters.h"
 #include "urldata.h"
@@ -115,5 +115,5 @@ CURLcode Curl_extract_certinfo(struct Curl_easy *data, int certnum,
 CURLcode Curl_verifyhost(struct Curl_cfilter *cf, struct Curl_easy *data,
                          const char *beg, const char *end);
 #endif /* USE_GNUTLS || USE_WOLFSSL || USE_SCHANNEL || USE_MBEDTLS ||
-          USE_RUSTLS */
+          USE_RUSTLS || USE_LIBNX */
 #endif /* HEADER_CURL_X509ASN1_H */
