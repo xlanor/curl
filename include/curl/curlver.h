@@ -32,7 +32,7 @@
 
 /* This is the version number of the libcurl package from which this header
    file origins: */
-#define LIBCURL_VERSION "8.18.0-DEV"
+#define LIBCURL_VERSION "8.18.0-libnx"
 
 /* The numeric version number is also available "in parts" by using these
    defines: */

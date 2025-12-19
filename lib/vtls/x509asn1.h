@@ -27,7 +27,7 @@
 #include "../curl_setup.h"
 
 #if defined(USE_GNUTLS) || defined(USE_WOLFSSL) || defined(USE_SCHANNEL) || \
-  defined(USE_MBEDTLS) || defined(USE_RUSTLS)
+  defined(USE_MBEDTLS) || defined(USE_RUSTLS) || defined(USE_LIBNX)
 
 #include "../cfilters.h"
 #include "../urldata.h"
@@ -90,5 +90,5 @@ CURLcode Curl_x509_getASN1Element(struct Curl_asn1Element *elem,
 #endif /* UNITTESTS */
 
 #endif /* USE_GNUTLS || USE_WOLFSSL || USE_SCHANNEL || USE_MBEDTLS ||
-          USE_RUSTLS */
+          USE_RUSTLS || USE_LIBNX */
 #endif /* HEADER_CURL_X509ASN1_H */
