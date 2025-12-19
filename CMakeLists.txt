@@ -661,13 +661,15 @@ cmake_dependent_option(CURL_USE_MBEDTLS "Enable mbedTLS for SSL/TLS" OFF CURL_EN
 cmake_dependent_option(CURL_USE_WOLFSSL "Enable wolfSSL for SSL/TLS" OFF CURL_ENABLE_SSL OFF)
 cmake_dependent_option(CURL_USE_GNUTLS "Enable GnuTLS for SSL/TLS" OFF CURL_ENABLE_SSL OFF)
 cmake_dependent_option(CURL_USE_RUSTLS "Enable Rustls for SSL/TLS" OFF CURL_ENABLE_SSL OFF)
+cmake_dependent_option(CURL_USE_LIBNX "Enable libnx for SSL/TLS (Nintendo Switch)" OFF CURL_ENABLE_SSL OFF)
 
 if(WIN32 OR
    CURL_USE_SCHANNEL OR
    CURL_USE_MBEDTLS OR
    CURL_USE_WOLFSSL OR
    CURL_USE_GNUTLS OR
-   CURL_USE_RUSTLS)
+   CURL_USE_RUSTLS OR
+   CURL_USE_LIBNX)
   set(_openssl_default OFF)
 else()
   set(_openssl_default ON)
@@ -687,6 +689,7 @@ curl_count_true(_enabled_ssl_options_count
   CURL_USE_WOLFSSL
   CURL_USE_GNUTLS
   CURL_USE_RUSTLS
+  CURL_USE_LIBNX
 )
 if(_enabled_ssl_options_count GREATER 1)
   set(CURL_WITH_MULTI_SSL ON)
@@ -875,6 +878,17 @@ if(CURL_USE_RUSTLS)
   endif()
 
   if(CURL_DEFAULT_SSL_BACKEND AND CURL_DEFAULT_SSL_BACKEND STREQUAL "rustls")
+    set(_valid_default_ssl_backend TRUE)
+  endif()
+  set(_curl_ca_bundle_supported TRUE)
+endif()
+
+if(CURL_USE_LIBNX)
+  # libnx is provided by the devkitPro Nintendo Switch toolchain
+  set(_ssl_enabled ON)
+  set(USE_LIBNX ON)
+
+  if(CURL_DEFAULT_SSL_BACKEND AND CURL_DEFAULT_SSL_BACKEND STREQUAL "libnx")
     set(_valid_default_ssl_backend TRUE)
   endif()
   set(_curl_ca_bundle_supported TRUE)

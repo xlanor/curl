@@ -85,6 +85,7 @@ LIB_VTLS_CFILES =           \
   vtls/gtls.c               \
   vtls/hostcheck.c          \
   vtls/keylog.c             \
+  vtls/libnx.c              \
   vtls/mbedtls.c            \
   vtls/mbedtls_threadlock.c \
   vtls/openssl.c            \
@@ -103,6 +104,7 @@ LIB_VTLS_HFILES =           \
   vtls/gtls.h               \
   vtls/hostcheck.h          \
   vtls/keylog.h             \
+  vtls/libnx.h              \
   vtls/mbedtls.h            \
   vtls/mbedtls_threadlock.h \
   vtls/openssl.h            \
@@ -198,6 +200,7 @@ LIB_CFILES =         \
   hash.c             \
   headers.c          \
   hmac.c             \
+  hos.c              \
   hostip.c           \
   hostip4.c          \
   hostip6.c          \
@@ -334,6 +337,7 @@ LIB_HFILES =         \
   gopher.h           \
   hash.h             \
   headers.h          \
+  hos.h              \
   hostip.h           \
   hsts.h             \
   http.h             \

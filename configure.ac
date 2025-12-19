@@ -277,6 +277,15 @@ AS_HELP_STRING([--with-rustls=PATH],[where to look for Rustls, PATH points to th
   fi
 ])
 
+OPT_LIBNX=no
+AC_ARG_WITH(libnx,dnl
+AS_HELP_STRING([--with-libnx],[enable libnx TLS backend for Nintendo Switch]),[
+  OPT_LIBNX=$withval
+  if test "x$withval" != "xno"; then
+    TLSCHOICE="${TLSCHOICE:+$TLSCHOICE, }libnx"
+  fi
+])
+
 OPT_APPLE_SECTRUST=$curl_cv_apple
 AC_ARG_WITH(apple-sectrust,dnl
 AS_HELP_STRING([--with-apple-sectrust],[enable Apple OS native certificate verification]),[
@@ -2015,6 +2024,7 @@ CURL_WITH_GNUTLS
 CURL_WITH_MBEDTLS
 CURL_WITH_WOLFSSL
 CURL_WITH_RUSTLS
+CURL_WITH_LIBNX
 CURL_WITH_APPLE_SECTRUST
 
 dnl link required libraries for USE_WIN32_CRYPTO or SCHANNEL_ENABLED
@@ -2027,10 +2037,10 @@ if test "$curl_cv_native_windows" = "yes"; then
   LIBS="-lbcrypt $LIBS"
 fi
 
-case "x$SSL_DISABLED$OPENSSL_ENABLED$GNUTLS_ENABLED$MBEDTLS_ENABLED$WOLFSSL_ENABLED$SCHANNEL_ENABLED$RUSTLS_ENABLED" in
+case "x$SSL_DISABLED$OPENSSL_ENABLED$GNUTLS_ENABLED$MBEDTLS_ENABLED$WOLFSSL_ENABLED$SCHANNEL_ENABLED$RUSTLS_ENABLED$LIBNX_ENABLED" in
   x)
     AC_MSG_ERROR([TLS not detected, you will not be able to use HTTPS, FTPS, NTLM and more.
-Use --with-openssl, --with-gnutls, --with-wolfssl, --with-mbedtls, --with-schannel, --with-amissl or --with-rustls to address this.])
+Use --with-openssl, --with-gnutls, --with-wolfssl, --with-mbedtls, --with-schannel, --with-amissl, --with-rustls or --with-libnx to address this.])
     ;;
   x1)
     # one SSL backend is enabled
@@ -2042,7 +2052,7 @@ Use --with-openssl, --with-gnutls, --with-wolfssl, --with-mbedtls, --with-schann
     ;;
   xD*)
     AC_MSG_ERROR([--without-ssl has been set together with an explicit option to use an ssl library
-(e.g. --with-openssl, --with-gnutls, --with-wolfssl, --with-mbedtls, --with-schannel, --with-amissl, --with-rustls).
+(e.g. --with-openssl, --with-gnutls, --with-wolfssl, --with-mbedtls, --with-schannel, --with-amissl, --with-rustls, --with-libnx).
 Since these are conflicting parameters, verify which is the desired one and drop the other.])
     ;;
   *)

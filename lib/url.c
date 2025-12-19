@@ -92,6 +92,7 @@
 #include "urlapi-int.h"
 #include "system_win32.h"
 #include "hsts.h"
+#include "hos.h"
 #include "noproxy.h"
 #include "cfilters.h"
 #include "idn.h"
@@ -2369,6 +2370,13 @@ static CURLcode create_conn_helper_init_proxy(struct Curl_easy *data,
     if(result)
       goto out;
   }
+
+  /*************************************************************
+   * Try to get system proxy settings (e.g. on Nintendo Switch)
+   *************************************************************/
+  result = Curl_hos_get_system_proxy(data);
+  if(result)
+    goto out;
 
   /*************************************************************
    * Detect what (if any) proxy to use
