@@ -693,6 +693,16 @@ static CURLcode libnx_connect_step2(struct Curl_cfilter *cf,
   }
 #endif
 
+  /* Handshake is done; curl drives I/O from here and expects CURLE_AGAIN
+   * rather than a blocking read. Without this the connection never yields,
+   * which breaks timeouts and stalls CONNECT_ONLY users (websockets) that
+   * must select() on the socket themselves. */
+  rc = sslConnectionSetIoMode(&backend->conn, SslIoMode_NonBlocking);
+  if(R_FAILED(rc)) {
+    failf(data, "libnx: sslConnectionSetIoMode(nonblocking) failed: 0x%x", rc);
+    return CURLE_SSL_CONNECT_ERROR;
+  }
+
   connssl->connecting_state = ssl_connect_done;
   return CURLE_OK;
 }
