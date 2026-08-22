@@ -319,6 +319,20 @@ static CURLcode libnx_connect_step1(struct Curl_cfilter *cf,
   }
   backend->context_ready = true;
 
+  /* Load CA certificates supplied in memory */
+  if(conn_config->ca_info_blob) {
+    rc = sslContextImportServerPki(&backend->context,
+                                   conn_config->ca_info_blob->data,
+                                   conn_config->ca_info_blob->len,
+                                   SslCertificateFormat_Pem, NULL);
+    if(R_FAILED(rc)) {
+      failf(data, "libnx: failed to import CA cert blob: 0x%x", rc);
+      return CURLE_SSL_CACERT_BADFILE;
+    }
+    infof(data, "libnx: loaded CA cert blob (%zu bytes)",
+          conn_config->ca_info_blob->len);
+  }
+
   /* Load CA certificate file */
   if(ssl_cafile) {
     u8 *certdata = NULL;
@@ -412,11 +426,15 @@ static CURLcode libnx_connect_step1(struct Curl_cfilter *cf,
   /* Skip default verify - allows custom certificate validation
    * Available on firmware 5.0.0+ */
   sslConnectionSetOption(&backend->conn,
-                         SslOptionType_SkipDefaultVerify, TRUE);
+                         SslOptionType_SkipDefaultVerify,
+                         data->set.ssl.certinfo ? FALSE : TRUE);
   /* Ignore errors - not available on all firmware versions */
 
   /* Configure verification options (combined flags) */
-  {
+  if(data->set.ssl.certinfo) {
+    infof(data, "libnx: certinfo requested, leaving verification to the service");
+  }
+  else {
     u32 verifyopt = SslVerifyOption_DateCheck; /* Always check cert dates */
     if(verifypeer)
       verifyopt |= SslVerifyOption_PeerCa;
@@ -433,9 +451,14 @@ static CURLcode libnx_connect_step1(struct Curl_cfilter *cf,
   if(hosversionAtLeast(3, 0, 0)) {
     rc = sslConnectionSetOption(&backend->conn,
                                 SslOptionType_GetServerCertChain, TRUE);
+    infof(data, "libnx: GetServerCertChain setopt rc=0x%x (certinfo=%d)",
+          rc, (int)data->set.ssl.certinfo);
     if(R_FAILED(rc)) {
       infof(data, "libnx: GetServerCertChain not available: 0x%x", rc);
     }
+  }
+  else {
+    infof(data, "libnx: GetServerCertChain skipped, hosversion < 3.0.0");
   }
 
   /* Configure session caching - requires socket descriptor to be set */
@@ -539,6 +562,25 @@ static CURLcode libnx_connect_step2(struct Curl_cfilter *cf,
             failf(data, "libnx: certificate verification failed: 0x%x",
                   verify_rc);
             return CURLE_PEER_FAILED_VERIFICATION;
+          }
+        }
+      }
+    }
+
+    if(data->set.ssl.certinfo && out_size && total_certs) {
+      CURLcode ci_result = Curl_ssl_init_certinfo(data, (int)total_certs);
+      if(!ci_result && hosversionAtLeast(3, 0, 0)) {
+        u32 ci;
+        for(ci = 0; ci < total_certs; ci++) {
+          void *certdata = NULL;
+          u32 certdata_size = 0;
+          if(R_SUCCEEDED(sslConnectionGetServerCertDetail(backend->certbuf,
+                                                          out_size, ci,
+                                                          &certdata,
+                                                          &certdata_size))
+             && certdata && certdata_size > 0) {
+            Curl_extract_certinfo(data, (int)ci, (const char *)certdata,
+                                  (const char *)certdata + certdata_size);
           }
         }
       }
