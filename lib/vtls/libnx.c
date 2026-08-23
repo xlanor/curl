@@ -423,19 +423,18 @@ static CURLcode libnx_connect_step1(struct Curl_cfilter *cf,
     }
   }
 
-  /* Skip default verify - allows custom certificate validation
-   * Available on firmware 5.0.0+ */
+  /* SetVerifyOption insists on PeerCa|HostName unless default verification is
+   * skipped, so the skip has to follow what the caller actually asked for
+   * rather than whether certinfo was requested. Available on firmware 5.0.0+;
+   * errors are ignored because it is absent on older versions. */
   sslConnectionSetOption(&backend->conn,
                          SslOptionType_SkipDefaultVerify,
-                         data->set.ssl.certinfo ? FALSE : TRUE);
-  /* Ignore errors - not available on all firmware versions */
+                         (verifypeer || verifyhost) ? FALSE : TRUE);
 
-  /* Configure verification options (combined flags) */
-  if(data->set.ssl.certinfo) {
-    infof(data, "libnx: certinfo requested, leaving verification to the service");
-  }
-  else {
-    u32 verifyopt = SslVerifyOption_DateCheck; /* Always check cert dates */
+  {
+    /* The service's default bitmask is PeerCa|HostName and leaves certificate
+     * dates unchecked, so ask for DateCheck explicitly. */
+    u32 verifyopt = SslVerifyOption_DateCheck;
     if(verifypeer)
       verifyopt |= SslVerifyOption_PeerCa;
     if(verifyhost)
@@ -445,6 +444,8 @@ static CURLcode libnx_connect_step1(struct Curl_cfilter *cf,
       failf(data, "libnx: sslConnectionSetVerifyOption failed: 0x%x", rc);
       return CURLE_SSL_CONNECT_ERROR;
     }
+    infof(data, "libnx: verify options 0x%x (peer=%d host=%d certinfo=%d)",
+          verifyopt, (int)verifypeer, (int)verifyhost, (int)data->set.ssl.certinfo);
   }
 
   /* Request server certificate chain on firmware 3.0.0+ */
@@ -505,6 +506,7 @@ static CURLcode libnx_connect_step1(struct Curl_cfilter *cf,
 static CURLcode libnx_connect_step2(struct Curl_cfilter *cf,
                                     struct Curl_easy *data)
 {
+  struct ssl_config_data *ssl_config = Curl_ssl_cf_get_config(cf, data);
   struct ssl_connect_data *connssl = cf->ctx;
   struct libnx_ssl_backend_data *backend =
     (struct libnx_ssl_backend_data *)connssl->backend;
@@ -544,7 +546,12 @@ static CURLcode libnx_connect_step2(struct Curl_cfilter *cf,
     /* Get detailed certificate verification error if available */
     if(conn_config->verifypeer) {
       Result verify_rc = sslConnectionGetVerifyCertError(&backend->conn);
+      /* Report it the way every other backend does, so callers can read it
+       * with CURLINFO_SSL_VERIFYRESULT instead of parsing a log line. */
+      ssl_config->certverifyresult = (long)verify_rc;
       if(R_FAILED(verify_rc)) {
+        infof(data, "libnx: verify result 0x%x (module %u, description %u)",
+              verify_rc, R_MODULE(verify_rc), R_DESCRIPTION(verify_rc));
         /* Map specific cert errors */
         u32 mod = R_MODULE(verify_rc);
         u32 desc = R_DESCRIPTION(verify_rc);
@@ -703,6 +710,7 @@ static CURLcode libnx_connect_step2(struct Curl_cfilter *cf,
     return CURLE_SSL_CONNECT_ERROR;
   }
 
+  ssl_config->certverifyresult = 0;
   connssl->connecting_state = ssl_connect_done;
   return CURLE_OK;
 }
