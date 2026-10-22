@@ -2107,6 +2107,7 @@ curl_add_if("mbedTLS"          _ssl_enabled AND USE_MBEDTLS)
 curl_add_if("wolfSSL"          _ssl_enabled AND USE_WOLFSSL)
 curl_add_if("GnuTLS"           _ssl_enabled AND USE_GNUTLS)
 curl_add_if("Rustls"           _ssl_enabled AND USE_RUSTLS)
+curl_add_if("libnx"            _ssl_enabled AND USE_LIBNX)
 
 if(_items)
   list(SORT _items CASE INSENSITIVE)
